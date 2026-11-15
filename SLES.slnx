@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SLES.Api/SLES.Api.csproj" />
+    <Project Path="src/SLES.Application/SLES.Application.csproj" />
+    <Project Path="src/SLES.Domain/SLES.Domain.csproj" />
+    <Project Path="src/SLES.Infrastructure/SLES.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SLES.UnitTests/SLES.UnitTests.csproj" />
+  </Folder>
+</Solution>

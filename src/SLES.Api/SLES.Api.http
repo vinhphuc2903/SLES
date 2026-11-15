@@ -1,0 +1,6 @@
+@SLES.Api_HostAddress = http://localhost:5169
+
+GET {{SLES.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

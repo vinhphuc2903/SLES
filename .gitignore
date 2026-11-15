@@ -1,0 +1,44 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/coverage/
+**/test-results/
+**/playwright-report/
+
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+**/secrets/
+**/backups/
+*.pem
+*.pfx
+*.key
+.DS_Store
+# Local IDE and OS metadata
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+# Private deployment state, certificates and database exports
+**/state/
+*.p12
+*.p7b
+*.crt
+*.cer
+*.der
+*.dump
+*.backup
+*.bak
+*.sql.gz
+*.sql.zip
+*.zip
+*.tar
+*.tgz
+*.7z
+*.rar
+*.log
+# Keep SQL schema/migrations and public configuration examples.
