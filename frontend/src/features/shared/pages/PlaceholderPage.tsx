@@ -1,0 +1,7 @@
+import { ArrowRight, Construction } from 'lucide-react'
+import { Link } from 'react-router'
+import { EmptyState } from '@/components/feedback/EmptyState'
+
+export function PlaceholderPage({ title, description }: { title: string; description: string }) {
+  return <div className="space-y-7"><div><p className="text-sm font-semibold text-brand-700">SLES · Đang phát triển</p><h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900">{title}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{description}</p></div><div className="rounded-2xl border border-brand-100 bg-gradient-to-r from-brand-50 to-cyan-50 p-5 sm:p-6"><div className="flex items-start gap-4"><div className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-brand-700 shadow-sm"><Construction className="size-5" /></div><div><h2 className="font-semibold text-slate-900">Khu vực này sẽ có trong giai đoạn tiếp theo</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">Nền tảng và xác thực đã sẵn sàng. Các chức năng nghiệp vụ sẽ được kết nối trực tiếp với API khi triển khai từng module.</p></div></div></div><EmptyState title="Chưa có dữ liệu để hiển thị" description="Đây là trang nền. Hệ thống chưa gọi API hoặc tạo dữ liệu mẫu cho chức năng này." /><Link to="/profile" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-700 hover:text-brand-900">Xem hồ sơ tài khoản <ArrowRight className="size-4" /></Link></div>
+}
