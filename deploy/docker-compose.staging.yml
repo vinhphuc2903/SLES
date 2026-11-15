@@ -1,0 +1,89 @@
+name: ${COMPOSE_PROJECT_NAME:-sles-staging}
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+services:
+  web:
+    image: sles-web:${RELEASE_TAG:?Set RELEASE_TAG}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Set PUBLIC_HOST}
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTP_PORT:-80}:8080"
+      - "${BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-443}:8443"
+    volumes:
+      - ${NGINX_SITE_TEMPLATE:-./nginx/site.conf.template}:/etc/nginx/templates/default.conf.template:ro
+      - ./state/tls:/etc/nginx/tls:ro
+      - ./state/acme:/var/www/acme:ro
+    networks:
+      proxy: { ipv4_address: "${PROXY_IP:-172.30.80.2}" }
+      edge: {}
+    depends_on:
+      api: { condition: service_healthy }
+    read_only: true
+    tmpfs:
+      - /tmp:uid=101,gid=101,mode=1777
+      - /etc/nginx/conf.d:uid=101,gid=101,mode=0755
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    logging: *logging
+  api:
+    image: sles-api:${RELEASE_TAG:?Set RELEASE_TAG}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      SLES_CONFIG_FILE: /run/secrets/api_settings
+      AllowedHosts: "${PUBLIC_HOST:?Set PUBLIC_HOST};localhost;127.0.0.1"
+      ReverseProxy__KnownProxies__0: ${PROXY_IP:-172.30.80.2}
+      ASPNETCORE_HTTPS_PORT: "443"
+    secrets: [api_settings]
+    networks: [proxy, database]
+    depends_on:
+      postgres: { condition: service_healthy }
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    logging: *logging
+  postgres:
+    image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sles_staging}
+      POSTGRES_USER: ${DB_OWNER:-sles_owner}
+      SLES_APP_USER: ${DB_APP_USER:-sles_app}
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_admin_password
+      PGDATA: /var/lib/postgresql/18/docker
+    secrets: [pg_admin_password, app_db_password]
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./postgres/init.sh:/docker-entrypoint-initdb.d/10-sles.sh:ro
+      - ../database/SLES_Database_v1_2.sql:/opt/sles/schema.sql:ro
+      - ../database/001_question_difficulty_up.sql:/opt/sles/difficulty.sql:ro
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    logging: *logging
+networks:
+  edge: {}
+  proxy:
+    internal: true
+    ipam:
+      config: [{ subnet: "${PROXY_SUBNET:-172.30.80.0/24}" }]
+  database: { internal: true }
+volumes:
+  pgdata: {}
+secrets:
+  api_settings: { file: ./secrets/api-settings.json }
+  pg_admin_password: { file: ./secrets/pg-admin-password }
+  app_db_password: { file: ./secrets/app-db-password }

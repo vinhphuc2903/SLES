@@ -1,0 +1,8 @@
+# ACME-only bootstrap: no application or API served without TLS.
+server {
+    listen 8080 default_server;
+    server_name ${PUBLIC_HOST};
+    location = /healthz { access_log off; return 200 'ok'; }
+    location /.well-known/acme-challenge/ { root /var/www/acme; }
+    location / { return 503 'TLS setup pending'; }
+}
