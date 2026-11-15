@@ -1,0 +1,85 @@
+# API inventory cho Phase 12A
+
+Inventory từ controllers; không có nghĩa mọi endpoint đã được browser E2E kiểm tra. Xem E2ETesting12A.md cho coverage thực thi.
+
+| Controller | Method | Route | Authorization |
+|---|---|---|---|
+| AdminSubjectsController | GET | `/api/admin/subjects` | RoleCodes.Admin |
+| AdminSubjectsController | GET | `/api/admin/subjects/{id:guid}` | RoleCodes.Admin |
+| AdminSubjectsController | POST | `/api/admin/subjects` | RoleCodes.Admin |
+| AdminSubjectsController | PUT | `/api/admin/subjects/{id:guid}` | RoleCodes.Admin |
+| AdminSubjectsController | PATCH | `/api/admin/subjects/{id:guid}/status` | RoleCodes.Admin |
+| AdminTeachersController | POST | `/api/admin/teachers` | RoleCodes.Admin |
+| AdminTeachersController | GET | `/api/admin/teachers` | RoleCodes.Admin |
+| AdminTeachersController | GET | `/api/admin/teachers/{id:guid}` | RoleCodes.Admin |
+| AdminTeachersController | PUT | `/api/admin/teachers/{id:guid}` | RoleCodes.Admin |
+| AdminTeachersController | PATCH | `/api/admin/teachers/{id:guid}/status` | RoleCodes.Admin |
+| AdminTeachersController | POST | `/api/admin/teachers/{id:guid}/reset-password` | RoleCodes.Admin |
+| AuthController | POST | `/api/auth/login` | Authenticated |
+| AuthController | POST | `/api/auth/refresh` | Authenticated |
+| AuthController | POST | `/api/auth/logout` | Authenticated |
+| AuthController | GET | `/api/auth/me` | Authenticated |
+| AuthController | PUT | `/api/auth/change-password` | Authenticated |
+| ChaptersController | GET | `/api/chapters` | RoleCodes.Admin + "," + RoleCodes.Teacher + "," + RoleCodes.Student |
+| ChaptersController | GET | `/api/chapters/{id:guid}` | RoleCodes.Admin + "," + RoleCodes.Teacher + "," + RoleCodes.Student |
+| StudentExamsController | GET | `/api/student/exams` | RoleCodes.Student |
+| StudentExamsController | GET | `/api/student/exams/{examId:guid}` | RoleCodes.Student |
+| StudentExamsController | GET | `/api/student/exams/history` | RoleCodes.Student |
+| StudentExamsController | GET | `/api/student/exams/available` | RoleCodes.Student |
+| StudentExamsController | POST | `/api/student/exams/{examId:guid}/start` | RoleCodes.Student |
+| StudentExamsController | GET | `/api/student/exams/{examId:guid}/attempt` | RoleCodes.Student |
+| StudentExamsController | GET | `/api/student/exam-attempts/{attemptId:guid}` | RoleCodes.Student |
+| StudentExamsController | PUT | `/api/student/exam-attempts/{attemptId:guid}/questions/{attemptQuestionId:guid}/answer` | RoleCodes.Student |
+| StudentExamsController | POST | `/api/student/exam-attempts/{attemptId:guid}/submit` | RoleCodes.Student |
+| StudentExamsController | GET | `/api/student/exam-attempts/{attemptId:guid}/result` | RoleCodes.Student |
+| StudentPracticeController | POST | `/api/student/chapters/{chapterId:guid}/practice` | RoleCodes.Student |
+| StudentPracticeController | GET | `/api/student/practice/{attemptId:guid}` | RoleCodes.Student |
+| StudentPracticeController | PUT | `/api/student/practice/{attemptId:guid}/questions/{questionId:guid}/answer` | RoleCodes.Student |
+| StudentPracticeController | POST | `/api/student/practice/{attemptId:guid}/submit` | RoleCodes.Student |
+| StudentPracticeController | GET | `/api/student/practice/{attemptId:guid}/result` | RoleCodes.Student |
+| StudentPracticeController | GET | `/api/student/practice/history` | RoleCodes.Student |
+| StudentPracticeController | GET | `/api/student/practice/history/{attemptId:guid}` | RoleCodes.Student |
+| StudentQuestionsController | GET | `/api/student/chapters/{chapterId:guid}/questions` | RoleCodes.Student |
+| StudentSubjectsController | GET | `/api/student/subjects` | RoleCodes.Student |
+| StudentSubjectsController | GET | `/api/student/subjects/{subjectId:guid}` | RoleCodes.Student |
+| SubjectsController | GET | `/api/subjects` | Authenticated |
+| SubjectsController | GET | `/api/subjects/{id:guid}` | Authenticated |
+| TeacherChaptersController | POST | `/api/teacher/chapters` | RoleCodes.Teacher |
+| TeacherChaptersController | PUT | `/api/teacher/chapters/{id:guid}/content` | RoleCodes.Teacher |
+| TeacherChaptersController | POST | `/api/teacher/chapters/{id:guid}/publish` | RoleCodes.Teacher |
+| TeacherChaptersController | POST | `/api/teacher/chapters/{id:guid}/archive` | RoleCodes.Teacher |
+| TeacherChaptersController | DELETE | `/api/teacher/chapters/{id:guid}` | RoleCodes.Teacher |
+| TeacherExamsController | GET | `/api/teacher/chapters/{chapterId:guid}/exam-blueprint` | RoleCodes.Teacher |
+| TeacherExamsController | POST | `/api/teacher/exams` | RoleCodes.Teacher |
+| TeacherExamsController | GET | `/api/teacher/exams` | RoleCodes.Teacher |
+| TeacherExamsController | GET | `/api/teacher/exams/{examId:guid}` | RoleCodes.Teacher |
+| TeacherExamsController | PUT | `/api/teacher/exams/{examId:guid}` | RoleCodes.Teacher |
+| TeacherExamsController | POST | `/api/teacher/exams/{examId:guid}/publish` | RoleCodes.Teacher |
+| TeacherExamsController | POST | `/api/teacher/exams/{examId:guid}/close` | RoleCodes.Teacher |
+| TeacherExamsController | POST | `/api/teacher/exams/{examId:guid}/permissions` | RoleCodes.Teacher |
+| TeacherExamsController | POST | `/api/teacher/exams/{examId:guid}/permissions/bulk` | RoleCodes.Teacher |
+| TeacherExamsController | GET | `/api/teacher/exams/{examId:guid}/permissions` | RoleCodes.Teacher |
+| TeacherExamsController | DELETE | `/api/teacher/exams/{examId:guid}/permissions/{studentId:guid}` | RoleCodes.Teacher |
+| TeacherExamsController | GET | `/api/teacher/exams/{examId:guid}/results` | RoleCodes.Teacher |
+| TeacherExamsController | GET | `/api/teacher/exams/{examId:guid}/attempts/{attemptId:guid}` | RoleCodes.Teacher |
+| TeacherGradesController | GET | `/api/teacher/grades` | RoleCodes.Teacher |
+| TeacherQuestionImportsController | GET | `/api/teacher/questions/import/template` | RoleCodes.Teacher |
+| TeacherQuestionImportsController | POST | `/api/teacher/chapters/{chapterId:guid}/questions/import/preview` | RoleCodes.Teacher |
+| TeacherQuestionImportsController | POST | `/api/teacher/chapters/{chapterId:guid}/questions/import/confirm` | RoleCodes.Teacher |
+| TeacherQuestionImportsController | GET | `/api/teacher/chapters/{chapterId:guid}/questions/import/status` | RoleCodes.Teacher |
+| TeacherQuestionsController | PATCH | `/api/teacher/questions/{id:guid}/difficulty` | RoleCodes.Teacher |
+| TeacherQuestionsController | POST | `/api/teacher/chapters/{chapterId:guid}/questions/bulk-publish` | RoleCodes.Teacher |
+| TeacherQuestionsController | GET | `/api/teacher/chapters/{chapterId:guid}/questions/progress` | RoleCodes.Teacher |
+| TeacherQuestionsController | POST | `/api/teacher/chapters/{chapterId:guid}/questions` | RoleCodes.Teacher |
+| TeacherQuestionsController | GET | `/api/teacher/chapters/{chapterId:guid}/questions` | RoleCodes.Teacher |
+| TeacherQuestionsController | GET | `/api/teacher/questions/{id:guid}` | RoleCodes.Teacher |
+| TeacherQuestionsController | PUT | `/api/teacher/questions/{id:guid}` | RoleCodes.Teacher |
+| TeacherQuestionsController | POST | `/api/teacher/questions/{id:guid}/publish` | RoleCodes.Teacher |
+| TeacherQuestionsController | POST | `/api/teacher/questions/{id:guid}/archive` | RoleCodes.Teacher |
+| TeacherQuestionsController | DELETE | `/api/teacher/questions/{id:guid}` | RoleCodes.Teacher |
+| TeacherStudentsController | POST | `/api/teacher/students` | RoleCodes.Teacher |
+| TeacherStudentsController | GET | `/api/teacher/students` | RoleCodes.Teacher |
+| TeacherStudentsController | GET | `/api/teacher/students/{id:guid}` | RoleCodes.Teacher |
+| TeacherStudentsController | PUT | `/api/teacher/students/{id:guid}` | RoleCodes.Teacher |
+| TeacherStudentsController | PATCH | `/api/teacher/students/{id:guid}/status` | RoleCodes.Teacher |
+| TeacherStudentsController | POST | `/api/teacher/students/{id:guid}/reset-password` | RoleCodes.Teacher |
