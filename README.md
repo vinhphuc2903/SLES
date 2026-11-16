@@ -37,3 +37,13 @@ For PostgreSQL integration and browser tests, follow [E2E setup](docs/E2ETesting
 ## Source history
 
 The module commits were assembled from the current source on 16 November 2026, with actual commit timestamps. They are an organizational import, not recovered historical snapshots. Shared API composition is introduced after backend modules; frontend routing is introduced after the dashboard and student modules. Only the final assembled tree is validated as a complete application.
+
+## Continuous integration
+
+[![Backend CI](https://github.com/vinhphuc2903/SLES/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/vinhphuc2903/SLES/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/vinhphuc2903/SLES/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/vinhphuc2903/SLES/actions/workflows/frontend-ci.yml)
+[![E2E CI](https://github.com/vinhphuc2903/SLES/actions/workflows/e2e-ci.yml/badge.svg)](https://github.com/vinhphuc2903/SLES/actions/workflows/e2e-ci.yml)
+
+Three independent workflows run on pushes to `main`, PRs targeting `main`, and manual dispatch: .NET 10 Release + PostgreSQL 18 tests, frontend lint/typecheck/build/Vitest, and Chromium E2E. They use generated test credentials and require no GitHub secrets.
+
+See [CI setup, local verification and troubleshooting](docs/CI.md) for commands, reports, environment variables and branch-protection check names. Badges reflect hosted execution only after these workflows are pushed and run; local validation does not establish a GitHub Actions status.

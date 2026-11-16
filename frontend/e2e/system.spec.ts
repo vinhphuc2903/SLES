@@ -3,7 +3,7 @@ import { seed, login, call, sql, workbook, preview, actor, password } from './he
 let data:Awaited<ReturnType<typeof seed>>
 test.describe.configure({mode:'serial'})
 test.beforeAll(async()=>{data=await seed()})
-test.afterEach(async({page})=>{await page.goto('about:blank')})
+test.afterEach(async({page})=>{if (!process.env.CI) await page.goto('about:blank')})
 test.afterAll(async()=>{if(data)await Promise.all([data.admin,data.teacher,...data.students.map(s=>s.ctx)].map(c=>c.dispose()))})
 
 test('01 Admin browser creates teacher; HTTP edit/status/subject and authorization',async({page})=>{

@@ -42,3 +42,6 @@
 *.rar
 *.log
 # Keep SQL schema/migrations and public configuration examples.
+
+# .NET default test output
+**/TestResults/
