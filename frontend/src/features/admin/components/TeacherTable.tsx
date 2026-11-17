@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { DataTable } from '@/components/ui/DataTable'
+import { DataTable, type TableColumn } from '@/components/ui/DataTable'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import type { Teacher } from '../types/contracts'
@@ -7,9 +7,10 @@ import { formatDate } from '../utils/adminErrors'
 
 export interface TeacherOperation { teacher: Teacher; kind: 'status' | 'reset' }
 
-export function TeacherTable({ rows, onAction }: { rows: Teacher[]; onAction: (operation: TeacherOperation) => void }) {
+export function TeacherTable({ rows, onAction, selection }: { selection?: TableColumn<Teacher> | null; rows: Teacher[]; onAction: (operation: TeacherOperation) => void }) {
   return <DataTable rows={rows} getRowKey={(row) => row.id} emptyTitle="Không tìm thấy giáo viên"
     emptyDescription="Hãy điều chỉnh bộ lọc hoặc tạo tài khoản giáo viên mới." columns={[
+      ...(selection ? [selection] : []),
       { key: 'username', header: 'Tên đăng nhập', render: (row) => <Link className="font-semibold text-brand-700 hover:underline" to={'/admin/teachers/' + row.id}>{row.username}</Link> },
       { key: 'fullName', header: 'Họ và tên', render: (row) => row.fullName },
       { key: 'contact', header: 'Liên hệ', render: (row) => <div className="min-w-40 break-all"><p>{row.email ?? 'Chưa có email'}</p><p className="mt-1 text-xs text-slate-500">{row.phone ?? 'Chưa có số điện thoại'}</p></div> },

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { EmptyState } from '@/components/feedback/EmptyState'
 
-export interface TableColumn<T> { key: string; header: string; render: (row: T) => ReactNode; className?: string }
+export interface TableColumn<T> { key: string; header: ReactNode; render: (row: T) => ReactNode; className?: string }
 
 export function DataTable<T>({ rows, columns, getRowKey, emptyTitle = 'Chưa có dữ liệu', emptyDescription = 'Dữ liệu sẽ xuất hiện tại đây khi có sẵn.' }: { rows: T[]; columns: TableColumn<T>[]; getRowKey: (row: T) => string; emptyTitle?: string; emptyDescription?: string }) {
   if (rows.length === 0) return <EmptyState title={emptyTitle} description={emptyDescription} />

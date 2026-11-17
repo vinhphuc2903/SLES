@@ -1,3 +1,4 @@
+import { BulkManagement } from '@/features/bulk/BulkManagement'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -18,7 +19,9 @@ export function StudentsPage() {
   return <div className="space-y-6"><PageHeader title="Quản lý học sinh" description="Hồ sơ và tài khoản học sinh do bạn quản lý." actions={<Link to="/teacher/students/new">Thêm học sinh</Link>} />
     <Filters params={params} onFilter={filter} />
     {query.isPending ? <ListSkeleton /> : query.isError ? <QueryError error={query.error} retry={() => void query.refetch()} /> : <>
-      <DataTable rows={query.data.items} getRowKey={s => s.id} columns={[
+      <BulkManagement rows={query.data.items} scope={JSON.stringify(params)} endpoint="/api/teacher/students/bulk-deactivate" action="Ngừng hoạt động đã chọn" consequence="Học sinh không thể đăng nhập; phiên làm mới bị thu hồi. Điểm và lịch sử được giữ." eligible={row => row.isActive} label={row => row.fullName}>
+      {selection => <DataTable rows={query.data.items} getRowKey={s => s.id} columns={[
+        ...(selection ? [selection] : []),
         {key:'username',header:'Tên đăng nhập',render:s => <Link className="font-semibold text-brand-700" to={'/teacher/students/' + s.id}>{s.username}</Link>},
         {key:'name',header:'Họ và tên',render:s => s.fullName},
         {key:'grade',header:'Khối lớp',render:s => grades.data?.find(g => g.id === s.gradeId)?.name ?? 'Không khả dụng'},
@@ -26,7 +29,7 @@ export function StudentsPage() {
         {key:'status',header:'Trạng thái',render:s => s.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'},
         {key:'date',header:'Ngày tạo',render:s => formatDate(s.createdAt)},
         {key:'actions',header:'Thao tác',render:s => <div className="flex flex-wrap gap-2"><Link to={'/teacher/students/' + s.id}>Xem / sửa</Link><Button variant="secondary" onClick={() => setOperation({student:s,kind:'status'})}>{s.isActive ? 'Ngừng hoạt động' : 'Kích hoạt'}</Button><Button variant="secondary" onClick={() => setOperation({student:s,kind:'reset'})}>Đặt lại mật khẩu</Button></div>},
-      ]} /><Pagination {...params} totalCount={query.data.totalCount} onPageChange={setPage} /></>}
+      ]} />}</BulkManagement><Pagination {...params} totalCount={query.data.totalCount} onPageChange={setPage} /></>}
     {operation && <StudentOperations operation={operation} onClose={() => setOperation(null)} />}
   </div>
 }
