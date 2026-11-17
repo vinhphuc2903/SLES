@@ -1,9 +1,10 @@
-"""Fail CI if either real PostgreSQL test was silently skipped."""
+"""Fail CI if any required real PostgreSQL test was silently skipped."""
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 required = {'Migration_rollback_bulk_concurrency_and_blueprint_work_on_real_schema',
-            'Authenticated_permissions_and_student_queries_work_on_Postgres'}
+            'Authenticated_permissions_and_student_queries_work_on_Postgres',
+            'Bulk_operations_preserve_relations_and_rollback_on_Postgres'}
 passed = set()
 for path in Path('test-results/backend').glob('*.trx'):
     for result in ET.parse(path).iter():
@@ -13,4 +14,4 @@ for path in Path('test-results/backend').glob('*.trx'):
                     passed.add(name)
 if passed != required:
     raise SystemExit('Required PostgreSQL integration tests did not pass: ' + ', '.join(sorted(required - passed)))
-print('Both required PostgreSQL integration tests passed.')
+print('All required PostgreSQL integration tests passed.')

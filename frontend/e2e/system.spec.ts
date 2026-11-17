@@ -214,3 +214,85 @@ test('12 Browser expired refresh token returns to login',async({page})=>{
   const result=await call(data.students[2].ctx,'GET',`/student/exam-attempts/${attempt.attemptId}/result`)
   expect(result.status).toBe('AutoSubmitted');expect(result.answeredQuestions).toBe(0);expect(result.score).toBe(0)
  })
+
+test('16 Teacher bulk question deletion preserves published data and rejects foreign IDs', async ({page}) => {
+ const chapter=await call(data.teacher,'POST','/teacher/chapters',{gradeId:data.grade.id,subjectId:data.subject.id,name:'Bulk question chapter',displayOrder:1})
+ const question=await call(data.teacher,'POST',`/teacher/chapters/${chapter.id}/questions`,{content:'Bulk disposable question',difficulty:'RECOGNITION',options:['A','B','C','D'].map((content,i)=>({content,isCorrect:i===0}))})
+ await login(page,'e2e_teacher');await page.goto(`/teacher/chapters/${chapter.id}/questions`)
+ await page.getByRole('checkbox',{name:'Chọn câu Bulk disposable question'}).check()
+ await page.getByRole('button',{name:'Xóa đã chọn',exact:true}).click()
+ await expect(page.getByRole('dialog')).toContainText('1 bản ghi')
+ await page.getByRole('button',{name:'Hủy',exact:true}).click()
+ expect((await call(data.teacher,'GET',`/teacher/questions/${question.question.id}`)).question.id).toBe(question.question.id)
+ await page.getByRole('button',{name:'Xóa đã chọn',exact:true}).click();await page.getByRole('button',{name:'Xác nhận thao tác',exact:true}).click()
+ await expect(page.getByText('Thành công: 1 · Thất bại: 0')).toBeVisible()
+ expect((await data.teacher.get('/api/teacher/questions/'+question.question.id)).status()).toBe(404)
+ const published=await call(data.teacher,'GET',`/teacher/chapters/${data.chapters[0].id}/questions?page=1&pageSize=1`)
+ const protectedId=published.items[0].id
+ const blocked=await call(data.teacher,'POST','/teacher/questions/bulk-delete',{ids:[protectedId]})
+ expect(blocked.results[0].code).toBe('invalid_transition')
+ expect((await data.students[0].ctx.post('/api/teacher/questions/bulk-delete',{data:{ids:[protectedId]}})).status()).toBe(403)
+ const foreignTeacher=await call(data.admin,'POST','/admin/teachers',{username:'e2e_bulk_foreign',fullName:'Foreign bulk teacher'})
+ const temporary=await actor(foreignTeacher.user.username,foreignTeacher.temporaryPassword)
+ await call(temporary,'PUT','/auth/change-password',{currentPassword:foreignTeacher.temporaryPassword,newPassword:password});await temporary.dispose()
+ const other=await actor(foreignTeacher.user.username)
+ try {const denied=await call(other,'POST','/teacher/questions/bulk-delete',{ids:[protectedId]});expect(denied.results[0].code).toBe('not_found')} finally {await other.dispose()}
+ expect(sql(`SELECT count(*) FROM questions WHERE id='${protectedId}' AND deleted_at IS NULL`)).toBe('1')
+})
+
+test('17 Teacher bulk chapter deletion reports protected dependencies', async ({page}) => {
+ const body={gradeId:data.grade.id,subjectId:data.subject.id,displayOrder:1}
+ const empty=await call(data.teacher,'POST','/teacher/chapters',{...body,name:'Bulk empty chapter'})
+ const blocked=await call(data.teacher,'POST','/teacher/chapters',{...body,name:'Bulk protected chapter'})
+ await call(data.teacher,'POST',`/teacher/chapters/${blocked.id}/questions`,{content:'Protected child',difficulty:'RECOGNITION',options:['A','B','C','D'].map((content,i)=>({content,isCorrect:i===0}))})
+ await login(page,'e2e_teacher');await page.goto('/teacher/chapters')
+ await page.getByRole('checkbox',{name:'Chọn xử lý: Bulk empty chapter'}).check();await page.getByRole('checkbox',{name:'Chọn xử lý: Bulk protected chapter'}).check()
+ await page.getByRole('button',{name:'Xóa đã chọn',exact:true}).click();await page.getByRole('button',{name:'Xác nhận thao tác',exact:true}).click()
+ await expect(page.getByText('Thành công: 1 · Thất bại: 1')).toBeVisible()
+ await expect(page.getByRole('status')).toContainText('Bulk protected chapter')
+ expect(sql(`SELECT count(*) FROM chapters WHERE id='${blocked.id}' AND deleted_at IS NULL`)).toBe('1')
+ expect(sql(`SELECT count(*) FROM chapters WHERE id='${empty.id}' AND deleted_at IS NOT NULL`)).toBe('1')
+})
+
+test('18 Teacher bulk deactivation preserves a student and blocks their session', async ({page}) => {
+ const created=await call(data.teacher,'POST','/teacher/students',{username:'e2e_bulk_student',fullName:'Bulk student',gradeId:data.grade.id})
+ const temporary=await actor(created.user.username,created.temporaryPassword)
+ await call(temporary,'PUT','/auth/change-password',{currentPassword:created.temporaryPassword,newPassword:password});await temporary.dispose()
+ const student=await actor(created.user.username)
+ try {
+  await login(page,'e2e_teacher');await page.goto('/teacher/students')
+  await page.getByRole('checkbox',{name:'Chọn xử lý: Bulk student',exact:true}).check()
+  await page.getByRole('button',{name:'Ngừng hoạt động đã chọn',exact:true}).click();await page.getByRole('button',{name:'Xác nhận thao tác',exact:true}).click()
+  await expect(page.getByText('Thành công: 1 · Thất bại: 0')).toBeVisible()
+  expect((await student.get('/api/auth/me')).status()).toBe(401)
+  expect(sql(`SELECT count(*) FROM users WHERE id='${created.user.id}' AND NOT is_active AND deleted_at IS NULL`)).toBe('1')
+  expect(sql(`SELECT count(*) FROM refresh_tokens WHERE user_id='${created.user.id}' AND revoked_at IS NULL`)).toBe('0')
+ } finally {await student.dispose()}
+})
+
+test('19 Teacher bulk closes only selected exams without deleting them', async ({page}) => {
+ const exam=await call(data.teacher,'POST','/teacher/exams',{chapterId:data.chapters[0].id,name:'Bulk close exam',durationMinutes:30})
+ await login(page,'e2e_teacher');await page.goto('/teacher/exams')
+ await page.getByRole('checkbox',{name:'Chọn xử lý: Bulk close exam',exact:true}).check()
+ await page.getByRole('button',{name:'Đóng bài thi đã chọn',exact:true}).click();await page.getByRole('button',{name:'Xác nhận thao tác',exact:true}).click()
+ await expect(page.getByText('Thành công: 1 · Thất bại: 0')).toBeVisible()
+ expect(sql(`SELECT status FROM exams WHERE id='${exam.id}'`)).toBe('CLOSED')
+ expect((await call(data.teacher,'GET',`/teacher/exams/${exam.id}`)).status).toBe('Closed')
+})
+
+test('20 Admin bulk deactivates a separate teacher while preserving linked students', async ({page}) => {
+ const created=await call(data.admin,'POST','/admin/teachers',{username:'e2e_bulk_teacher',fullName:'Bulk teacher'})
+ const temporary=await actor(created.user.username,created.temporaryPassword)
+ await call(temporary,'PUT','/auth/change-password',{currentPassword:created.temporaryPassword,newPassword:password});await temporary.dispose()
+ const teacher=await actor(created.user.username)
+ try {
+  const student=await call(teacher,'POST','/teacher/students',{username:'e2e_bulk_owned',fullName:'Preserved student',gradeId:data.grade.id})
+  expect((await data.teacher.post('/api/admin/teachers/bulk-deactivate',{data:{ids:[created.user.id]}})).status()).toBe(403)
+  await login(page,'e2e_admin');await page.goto('/admin/teachers')
+  await page.getByRole('checkbox',{name:'Chọn xử lý: Bulk teacher',exact:true}).check()
+  await page.getByRole('button',{name:'Ngừng hoạt động đã chọn',exact:true}).click();await page.getByRole('button',{name:'Xác nhận thao tác',exact:true}).click()
+  await expect(page.getByText('Thành công: 1 · Thất bại: 0')).toBeVisible()
+  expect((await teacher.get('/api/auth/me')).status()).toBe(401)
+  expect(sql(`SELECT count(*) FROM users WHERE id='${student.user.id}' AND deleted_at IS NULL`)).toBe('1')
+ } finally {await teacher.dispose()}
+})
