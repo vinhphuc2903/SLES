@@ -1,0 +1,162 @@
+name: Docker Build & Publish
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish scanned images (main only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    uses: ./.github/workflows/backend-ci.yml
+  frontend:
+    uses: ./.github/workflows/frontend-ci.yml
+  e2e:
+    uses: ./.github/workflows/e2e-ci.yml
+
+  images:
+    name: Build and scan ${{ matrix.component }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [api, web]
+    env:
+      DOCKER_METADATA_SHORT_SHA_LENGTH: '12'
+      DOCKER_BUILD_SUMMARY: 'false'
+      DOCKER_BUILD_RECORD_UPLOAD: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate release source and reproducible timestamp
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$REF" == refs/tags/* ]]; then
+            [[ "$REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+            git merge-base --is-ancestor HEAD origin/main
+          fi
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
+          echo "IMAGE_CREATED=$(git log -1 --format=%cI)" >> "$GITHUB_ENV"
+          python3 .github/scripts/test_container_image.py
+          mkdir -p out
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/vinhphuc2903/sles-${{ matrix.component }}
+          flavor: latest=false
+          tags: |
+            type=sha,format=short
+          labels: |
+            org.opencontainers.image.created=${{ env.IMAGE_CREATED }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=sha-${{ github.sha }}
+      - name: Build OCI archive (no registry credentials)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: deploy/Dockerfile.${{ matrix.component }}
+          platforms: linux/amd64
+          push: false
+          provenance: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
+          outputs: type=oci,dest=out/image.tar,rewrite-timestamp=true
+          cache-from: type=gha,scope=sles-${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=sles-${{ matrix.component }}
+      - name: Validate OCI metadata and record manifest digest
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: python3 .github/scripts/container-image.py validate out/image.tar "$COMPONENT" "$GITHUB_SHA" out/oci
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          version: v0.76.2
+          cache: false
+      - name: SBOM and vulnerability reports
+        run: |
+          trivy image --input out/oci --format spdx-json --output out/sbom.spdx.json
+          trivy image --input out/oci --scanners vuln --format json --output out/trivy.json
+          trivy convert --scanners vuln --format table --output out/trivy.txt out/trivy.json
+          cat out/trivy.txt
+      - name: Reject fixable HIGH and CRITICAL vulnerabilities
+        run: trivy image --input out/oci --scanners vuln --skip-db-update --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1
+      - name: Upload diagnostics even if the security gate fails
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: container-reports-${{ matrix.component }}
+          path: |
+            out/*.json
+            out/*.txt
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Upload approved image
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: container-image-${{ matrix.component }}
+          path: out/image.tar
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    name: Publish approved images
+    needs: [backend, frontend, e2e, images]
+    if: >-
+      github.repository == 'vinhphuc2903/SLES' &&
+      ((github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))) ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish && github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    concurrency:
+      group: sles-ghcr-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: container-image-*
+          path: images
+      - name: Install image transfer tool
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y skopeo
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Preflight immutable tags and publish the scanned archives
+        run: python3 .github/scripts/container-image.py publish images
+      - name: Upload published digest references
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: published-image-digests
+          path: images/published.txt
+          retention-days: 30
+          if-no-files-found: warn
