@@ -70,6 +70,7 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<SLES.Application.BulkManagement.IBulkManagementService, SLES.Infrastructure.BulkManagement.BulkManagementService>();
 builder.Services.AddScoped<ISubjectManagementService, SubjectManagementService>();
 builder.Services.AddScoped<IGradeLookupService, GradeLookupService>();
 builder.Services.AddScoped<IStudentLearningService, StudentLearningService>();
