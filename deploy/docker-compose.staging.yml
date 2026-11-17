@@ -79,7 +79,9 @@ networks:
   proxy:
     internal: true
     ipam:
-      config: [{ subnet: "${PROXY_SUBNET:-172.30.80.0/24}" }]
+      config:
+        - subnet: "${PROXY_SUBNET:-172.30.80.0/24}"
+          ip_range: "${PROXY_DYNAMIC_RANGE:-172.30.80.128/25}"
   database: { internal: true }
 volumes:
   pgdata: {}
