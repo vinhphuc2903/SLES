@@ -6,7 +6,7 @@
 |---|---|---|---|
 | `.github/workflows/backend-ci.yml` | `Backend CI` | .NET 10 Release restore/build, xUnit and real PostgreSQL integration tests | 20 min |
 | `.github/workflows/frontend-ci.yml` | `Frontend CI` | Node 22, npm ci, lint, TypeScript + Vite build, Vitest | 15 min |
-| `.github/workflows/e2e-ci.yml` | `E2E CI` | .NET 10 + Node 22 + Python 3.12, Chromium, 15 browser/API tests | 25 min |
+| `.github/workflows/e2e-ci.yml` | `E2E CI` | .NET 10 + Node 22 + Python 3.12, Chromium, 20 browser/API tests | 25 min |
 
 All three use `ubuntu-latest` and run on pushes to `main`, pull requests targeting `main`, or manual dispatch. They do not use path filters, so branch-protection checks remain consistently available. Concurrency is scoped by workflow and PR/branch; newer runs cancel older ones. Jobs are independent; the E2E job builds the API but does not rerun xUnit or Vitest.
 
@@ -24,7 +24,7 @@ Node setup caches npm downloads using `frontend/package-lock.json`; each job ins
 4. Replaces TCP trust with SCRAM password authentication and reloads PostgreSQL.
 5. Exports connection settings via the runner's temporary `GITHUB_ENV` file.
 
-The authenticated readiness command fails the job if the role cannot connect. Each backend integration test creates its own UUID database, applies the repository schema, seeds roles/users and drops the database in finally. The upgrade test applies the difficulty migration itself. Do not pre-initialize the service's `postgres` database with business tables: that would not exercise the tests' isolated schema setup. A TRX verifier requires both PostgreSQL tests to have passed, preventing silent skips.
+The authenticated readiness command fails the job if the role cannot connect. Each backend integration test creates its own UUID database, applies the repository schema, seeds roles/users and drops the database in finally. The upgrade test applies the difficulty migration itself. Do not pre-initialize the service's `postgres` database with business tables: that would not exercise the tests' isolated schema setup. A TRX verifier requires all three PostgreSQL tests (including bulk data integrity/rollback) to have passed, preventing silent skips.
 
 The E2E runner creates its own `sles_e2e_<uuid>` database, applies schema + difficulty migration, generates its own bootstrap password/JWT signing key and starts temporary API/Vite processes. The API readiness check requires HTTP 401 at `/api/auth/me`; Vite requires HTTP 200. Tests never connect to an existing application database. Normal completion, failures and SIGINT/SIGTERM trigger process-group termination and database cleanup. GitHub also destroys service containers when the job ends; this is the final cleanup boundary for hard kills or runner failures.
 
@@ -44,7 +44,7 @@ No workflow reads staging `.env`, Docker secrets or the development database. Fo
 
 ## Reports and troubleshooting
 
-- Backend failures upload `test-results/backend/*.trx`. If the PostgreSQL check is missing/skipped, the explicit verifier fails the job.
+- Backend failures upload `test-results/backend/*.trx`. If any required PostgreSQL check is missing/skipped, the explicit verifier fails the job.
 - Frontend uploads `frontend/test-results/vitest.xml` when it exists, even after test failure.
 - E2E failures upload `frontend/test-results/` and `frontend/playwright-report/`: JSON/HTML results, retained failure traces and screenshots. Video stays disabled. Server-error logs redact runner-generated bootstrap, database and signing-key values.
 - Artifacts expire after **3 days**. Traces/screenshots can contain ephemeral test passwords, access tokens and synthetic student data. They never need production credentials; treat them as test diagnostics and do not reuse CI credentials anywhere. Local runs keep traces/screenshots off unless `CI` is explicitly set.
@@ -95,3 +95,5 @@ References: [GitHub workflow syntax](https://docs.github.com/en/actions/referenc
 - Frontend lint, TypeScript/production build and Vitest JUnit output: passed, 184 tests.
 - CI-mode Chromium E2E using TCP/password authentication: all 15 passed. Temporary databases were absent afterward; the verification container/volume was removed.
 - These tests ran on the local macOS host with a Linux PostgreSQL service container, not on GitHub-hosted Ubuntu. Actual hosted workflow execution and failure artifact uploads remain unverified.
+
+The Phase 14A extension adds bulk management coverage: see [BulkDeleteManagement](BulkDeleteManagement.md) for the current 136 backend / 193 frontend / 20 E2E results. The dated Phase 13B results above remain a record of that earlier verification.

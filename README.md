@@ -47,3 +47,8 @@ The module commits were assembled from the current source on 16 November 2026, w
 Three independent workflows run on pushes to `main`, PRs targeting `main`, and manual dispatch: .NET 10 Release + PostgreSQL 18 tests, frontend lint/typecheck/build/Vitest, and Chromium E2E. They use generated test credentials and require no GitHub secrets.
 
 See [CI setup, local verification and troubleshooting](docs/CI.md) for commands, reports, environment variables and branch-protection check names. Badges reflect hosted execution only after these workflows are pushed and run; local validation does not establish a GitHub Actions status.
+
+
+## Bulk management
+
+See [Bulk management rules, API, audit and tests](docs/BulkDeleteManagement.md) for batch question/chapter soft deletion, student/teacher deactivation and exam closing. Academic history is preserved.
