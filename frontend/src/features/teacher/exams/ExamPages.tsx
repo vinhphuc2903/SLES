@@ -1,3 +1,4 @@
+import { BulkManagement } from '@/features/bulk/BulkManagement'
 import {ExamBlueprint} from './ExamBlueprint'
 import { Link,useNavigate,useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -20,8 +21,9 @@ function ChapterCell({id}:{id:string}){const q=useChapter(id);return q.data?<div
 export function ExamsPage(){
  const p=usePageQuery(),q=useExams({page:p.page,pageSize:20,keyword:p.keyword,status:p.status})
  return <div className="space-y-6"><PageHeader title="Quản lý bài kiểm tra" description="Lịch, quyền tham gia và kết quả bài kiểm tra của bạn." actions={<Link to="/teacher/exams/new">Tạo bài kiểm tra</Link>}/><SearchToolbar {...p} statuses={['Draft','Scheduled','Active','Closed','Cancelled']}/>
- {q.isPending?<ListSkeleton/>:q.isError?<QueryError error={q.error} retry={()=>void q.refetch()}/>:<><DataTable rows={q.data.items} getRowKey={e=>e.id} columns={[
- {key:'name',header:'Bài kiểm tra',render:e=><Link to={'/teacher/exams/'+e.id}>{e.name}</Link>},{key:'chapter',header:'Chương / Môn / Khối',render:e=><ChapterCell id={e.chapterId}/>},{key:'status',header:'Trạng thái',render:e=><Status value={e.status}/>},{key:'time',header:'Lịch (giờ địa phương)',render:e=><>{localDate(e.startAt)}<br/>{localDate(e.endAt)}<p>{e.durationMinutes} phút</p></>},{key:'actions',header:'Thao tác',render:e=><div className="space-y-3"><ExamLinks id={e.id}/><ExamActions exam={e}/></div>}]}/><Pagination page={p.page} pageSize={20} totalCount={q.data.totalCount} onPageChange={p.setPage}/></>}</div>
+ {q.isPending?<ListSkeleton/>:q.isError?<QueryError error={q.error} retry={()=>void q.refetch()}/>:<><BulkManagement rows={q.data.items} scope={[p.page,p.keyword,p.status].join(':')} endpoint="/api/teacher/exams/bulk-close" action="Đóng bài thi đã chọn" consequence="Ngừng cho bắt đầu lượt thi mới; quyền, bài làm và kết quả được giữ nguyên." eligible={row => row.status !== 'Closed' && row.status !== 'Cancelled'} label={row => row.name}>
+ {selection => <DataTable rows={q.data.items} getRowKey={e=>e.id} columns={[...(selection ? [selection] : []),
+ {key:'name',header:'Bài kiểm tra',render:e=><Link to={'/teacher/exams/'+e.id}>{e.name}</Link>},{key:'chapter',header:'Chương / Môn / Khối',render:e=><ChapterCell id={e.chapterId}/>},{key:'status',header:'Trạng thái',render:e=><Status value={e.status}/>},{key:'time',header:'Lịch (giờ địa phương)',render:e=><>{localDate(e.startAt)}<br/>{localDate(e.endAt)}<p>{e.durationMinutes} phút</p></>},{key:'actions',header:'Thao tác',render:e=><div className="space-y-3"><ExamLinks id={e.id}/><ExamActions exam={e}/></div>}]}/>}</BulkManagement><Pagination page={p.page} pageSize={20} totalCount={q.data.totalCount} onPageChange={p.setPage}/></>}</div>
 }
 export function ExamCreatePage(){const navigate=useNavigate(),m=useManagementMutation('exams',(v:ExamInput)=>examApi.create(v));return <div className="space-y-6"><PageHeader title="Tạo bài kiểm tra"/><ExamForm onSubmit={async v=>{const e=await m.mutateAsync(v);toast.success('Đã tạo bài kiểm tra.');navigate('/teacher/exams/'+e.id)}}/></div>}
 export function ExamDetailPage(){

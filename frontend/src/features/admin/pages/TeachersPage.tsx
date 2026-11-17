@@ -1,3 +1,4 @@
+import { BulkManagement } from '@/features/bulk/BulkManagement'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -19,7 +20,9 @@ export function TeachersPage() {
     <ListToolbar params={params} onFilter={setFilters} placeholder="Tên đăng nhập hoặc họ tên" />
     {query.isPending ? <ListSkeleton /> : query.isError ? <QueryError error={query.error} retry={() => void query.refetch()} /> :
       <div className="space-y-3">
-        <TeacherTable rows={query.data.items} onAction={setOperation} />
+        <BulkManagement rows={query.data.items} scope={JSON.stringify(params)} role="ADMIN" endpoint="/api/admin/teachers/bulk-deactivate" action="Ngừng hoạt động đã chọn" consequence="Giáo viên sẽ không thể đăng nhập; phiên làm mới bị thu hồi. Học sinh, nội dung và lịch sử vẫn được giữ." eligible={row => row.isActive} label={row => row.fullName}>
+          {selection => <TeacherTable rows={query.data.items} onAction={setOperation} selection={selection} />}
+        </BulkManagement>
         <Pagination page={params.page} pageSize={params.pageSize} totalCount={query.data.totalCount} onPageChange={setPage} />
       </div>}
     {operation && <TeacherOperations operation={operation} onClose={() => setOperation(null)} />}
