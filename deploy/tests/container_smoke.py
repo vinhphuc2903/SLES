@@ -55,6 +55,8 @@ def main():
         subnet = '10.247.' + str(secrets.randbelow(250) + 1)
         env = os.environ.copy()
         env.update(COMPOSE_PROJECT_NAME=project, BIND_ADDRESS='127.0.0.1',
+                   PUBLIC_HOST='localhost', DB_NAME='sles_staging',
+                   DB_OWNER='sles_owner', DB_APP_USER='sles_app',
                    HTTP_PORT=str(http), HTTPS_PORT=str(https), PROXY_SUBNET=subnet + '.0/24',
                    PROXY_IP=subnet + '.2', PROXY_DYNAMIC_RANGE=subnet + '.128/25', RELEASE_TAG='local')
         # Avoid inherited overrides pointing at real deployment resources.

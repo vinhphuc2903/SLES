@@ -28,7 +28,7 @@
       ]
     },
     "nginx": {
-      "image": "nginx:stable-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311",
+      "image": "nginx:stable-alpine-slim@sha256:e2355aa95529a7999dad94ddcb45a8768abf6fb0b204c93b1a3ffce477d7b893",
       "platforms": [
         "linux/386",
         "linux/amd64",
@@ -37,7 +37,8 @@
         "linux/ppc64le",
         "linux/riscv64",
         "linux/s390x"
-      ]
+      ],
+      "verifiedDate": "2026-11-17"
     },
     "postgres": {
       "image": "postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42",
