@@ -489,7 +489,7 @@ See [Staging Deployment Guide](docs/Deployment12B.md).
 | GitHub Actions CI | Implemented; hosted verification ongoing |
 | Bulk Delete Management | In progress |
 | Docker Staging Infrastructure | Prepared and locally verified |
-| GHCR Image Publishing | Planned |
+| GHCR Image Publishing | Implemented; hosted verification pending |
 | Automated Staging Deployment | Planned |
 
 ## Source History
@@ -507,3 +507,7 @@ No open-source license has been declared yet. Public repository visibility does 
 ## Bulk management
 
 See [Bulk management rules, API, audit and tests](docs/BulkDeleteManagement.md) for batch question/chapter soft deletion, student/teacher deactivation and exam closing. Academic history is preserved.
+
+## Container registry pipeline
+
+See [Phase 13C container images, scans, SBOM and GHCR](docs/ContainerRegistry13C.md). Publication is gated on backend, frontend, E2E and image security checks; no deployment is included.

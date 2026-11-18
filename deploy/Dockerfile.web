@@ -6,7 +6,11 @@ RUN npm ci
 COPY frontend/ ./
 ENV VITE_API_BASE_URL=""
 RUN npm run build
-FROM nginx:stable-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311 AS runtime
+# Only core HTTP/TLS/proxy modules are needed; omit optional XSLT/image/perl modules.
+FROM nginx:stable-alpine-slim@sha256:e2355aa95529a7999dad94ddcb45a8768abf6fb0b204c93b1a3ffce477d7b893 AS runtime
+LABEL org.opencontainers.image.source="https://github.com/vinhphuc2903/SLES" \
+      org.opencontainers.image.title="SLES Web"
+EXPOSE 8080 8443
 COPY --from=build /build/dist/ /usr/share/nginx/html/
 COPY deploy/nginx/security-headers.conf /etc/nginx/security-headers.conf
 COPY deploy/nginx/nginx.conf /etc/nginx/nginx.conf

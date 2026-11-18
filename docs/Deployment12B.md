@@ -64,7 +64,7 @@ Setup từ chối ghi đè `.env` hoặc secrets đã có. Có options `--databa
 | PUBLIC_HOST | Hostname thật, không scheme/port/path; đồng thời cho Nginx và AllowedHosts |
 | RELEASE_TAG | Tag riêng cho mỗi release; giữ image cũ để rollback |
 | DB_NAME / DB_OWNER / DB_APP_USER | Database staging, owner/migration role, app role ít quyền |
-| PROXY_SUBNET / PROXY_IP | Subnet không trùng host/VPN và static IP của Nginx; đổi cùng nhau |
+| PROXY_SUBNET / PROXY_DYNAMIC_RANGE / PROXY_IP | Subnet không trùng host/VPN, dải IP động nằm trong subnet và static IP Nginx nằm ngoài dải động; đổi cả ba cùng nhau |
 | HTTP_PORT / HTTPS_PORT / BIND_ADDRESS | Mặc định80/443/0.0.0.0; chỉ web publish |
 | NGINX_SITE_TEMPLATE | TLS template bình thường; command bootstrap-tls override tạm bằng ACME-only template |
 | BACKUP_DIR / BACKUP_KEEP | Đích backup và số archive giữ lại, mặc định7 |
