@@ -97,3 +97,7 @@ References: [GitHub workflow syntax](https://docs.github.com/en/actions/referenc
 - These tests ran on the local macOS host with a Linux PostgreSQL service container, not on GitHub-hosted Ubuntu. Actual hosted workflow execution and failure artifact uploads remain unverified.
 
 The Phase 14A extension adds bulk management coverage: see [BulkDeleteManagement](BulkDeleteManagement.md) for the current 136 backend / 193 frontend / 20 E2E results. The dated Phase 13B results above remain a record of that earlier verification.
+
+## Phase 13C container workflow
+
+[Docker Build & Publish](ContainerRegistry13C.md) calls all three workflows through `workflow_call` and requires their success before publishing the scanned OCI images. Their concurrency groups have distinct backend/frontend/e2e prefixes to prevent reusable-job cancellation collisions. Existing standalone triggers/checks remain. The Docker workflow alone supports version tags, build-only PRs and opt-in manual publication on main; only its publish job has `packages: write`. See the linked document for tags, Trivy policy, SPDX artifacts, permissions and the local/hosted verification boundary.
